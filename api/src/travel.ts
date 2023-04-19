@@ -1,15 +1,59 @@
 import axios from "axios";
 
+/**
+ * Searches hotel using query string
+ * @param searchQuery - the string to query hotels by
+ */
+async function searchHotels(searchQuery: string) {
+    const hotelData = [[["AtySUc", JSON.stringify([searchQuery]), null, "1"]]];
+    const queryData = encodeURIComponent(JSON.stringify(hotelData));
+    const { data } = await axios({
+        method: "POST",
+        url: "	https://www.google.com/_/TravelFrontendUi/data/batchexecute",
+        data: `f.req=${queryData}`,
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    });
+
+    const [, , str] = data.split("\n");
+    const [arr] = JSON.parse(str ?? "[]");
+    const [, , str2] = arr ?? [];
+    const [[dataArr]] = JSON.parse(str2 ?? "[]");
+    const [[, resultArr]] = dataArr ?? [[]];
+
+    const result = (resultArr as Array<any>).map((x: any) => {
+        const [i, obj] = x;
+        const data = {
+            name: "",
+            id: "",
+        };
+
+        // Looks like 34 is for hotel data
+        if (i !== 34) return data;
+
+        const [[k, v]] = Object.entries(obj ?? {});
+        const [hotelData] = (v as Array<any>) ?? [];
+        if (!hotelData || !Array.isArray(hotelData)) return data;
+
+        data.name = hotelData[1];
+        data.id = hotelData[20];
+
+        return data;
+    }).filter(x => (x.name && x.id));
+
+    return result;
+}
+
+/**
+ * @param hotel_id - Hotel unique identifier, used by google travel website. This is included in the hotel 
+ * @param date_start - 
+ * @param date_end - 
+ */
 async function getHotelPrices(hotel_id: string, date_start: number[], date_end: number[]) {
     const hotelData = [[["yY52ce", `[null,[${JSON.stringify(date_start)},${JSON.stringify(date_end)},1],[2,[],0],\"${hotel_id}\",\"USD\"]`, null, "generic"]]];
     const queryData = encodeURIComponent(JSON.stringify(hotelData));
     const { data } = await axios({
         method: "POST",
         url: "	https://www.google.com/_/TravelFrontendUi/data/batchexecute",
-        params: {
-            "rcpids": "yY52ce",
-            "source-path": `/travel/hotels/entity/${hotel_id}`,
-        },
         data: `f.req=${queryData}`,
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
     });
@@ -30,7 +74,7 @@ async function getHotelPrices(hotel_id: string, date_start: number[], date_end: 
         const dollar = (usd as string).replace(/\$/g, "").replace(/\,/g, "");
         const formattedDate = new Date(date).toISOString().split("T")[0];
 
-        console.log({ usd, dollar, i: parseInt(dollar) });
+        console.log("hotel", { usd, dollar, i: parseInt(dollar) });
 
         return {
             date: formattedDate,
@@ -93,19 +137,8 @@ async function getFlightPrices(from: string, to: string, flight_dates: string[],
     return result;
 }
 
-// getFlightPrices("SEA", "SFO", ["2023-11-01", "2023-11-05"], ["2023-10-01", "2023-12-01"]).then(data => {
-//     console.log(data);
-// }).catch(ex => {
-//     console.log(ex.toString());
-// });
-
-// getHotelPrices("ChkI57qoyvGZ6N1uGg0vZy8xMWMzeDhkdHdnEAE", [2023, 6, 1], [2023, 6, 30]).then(x => {
-//     console.log(x);
-// }).catch(ex => {
-//     console.log(ex.toString());
-// });
-
 export {
     getHotelPrices,
     getFlightPrices,
+    searchHotels,
 };

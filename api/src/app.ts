@@ -1,6 +1,6 @@
 import express from "express";
 
-import { getFlightPrices, getHotelPrices } from "./travel";
+import { getFlightPrices, getHotelPrices, searchHotels } from "./travel";
 
 const app = express();
 
@@ -51,6 +51,21 @@ app.get("/api/v0/hotels", async (req, res) => {
         startArr,
         endArr,
     );
+
+    res.json({
+        code: 200,
+        data: data ?? [],
+    });
+});
+
+app.get("/api/v0/hotels/search", async (req, res) => {
+    const { q } = req.query as { [key: string]: string };
+    if (!q) return res.json({
+        code: 400,
+        message: "required query params: q",
+    });
+
+    const data = await searchHotels(q);
 
     res.json({
         code: 200,
