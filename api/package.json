@@ -12,14 +12,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/icecreamsoft/travel-search.git"
+    "url": "git+https://github.com/icecreamsoft/travel-search-app.git"
   },
   "author": "",
-  "license": "ISC",
   "bugs": {
-    "url": "https://github.com/icecreamsoft/travel-search/issues"
+    "url": "https://github.com/icecreamsoft/travel-search-app/issues"
   },
-  "homepage": "https://github.com/icecreamsoft/travel-search#readme",
+  "homepage": "https://github.com/icecreamsoft/travel-search-app#readme",
   "dependencies": {
     "@types/node": "^18.15.11",
     "axios": "^1.3.5",
