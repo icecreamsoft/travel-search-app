@@ -30,9 +30,6 @@ const searchHotelAtom = atom(async (get) => {
         };
     });
 
-    console.log("::::::::", arr);
-
-
     return arr;
 });
 const asyncSearchHotelAtom = loadable(searchHotelAtom);
