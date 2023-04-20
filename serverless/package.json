@@ -9,6 +9,6 @@
   },
   "scripts": {
     "build": "sh build.sh",
-    "deploy": "serverless deploy"
+    "deploy": "sh build.sh && serverless deploy"
   }
 }
