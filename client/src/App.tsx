@@ -11,6 +11,32 @@ const initQuery = {
     nonStop: "1",
 };
 
+const searchHotelQueryAtom = atom("");
+const searchHotelAtom = atom(async (get) => {
+    const q = get(searchHotelQueryAtom);
+    if (!q) return null;
+
+    const hotelSearch = await fetch("/api/v0/hotels/search?" + new URLSearchParams({ q }));
+    const { data } = await hotelSearch.json();
+
+    console.log("hotels", data);
+
+    const arr = (data as Array<any>).map((x: any) => {
+        const { id, name } = x;
+
+        return {
+            id: id as string,
+            name: name as string,
+        };
+    });
+
+    console.log("::::::::", arr);
+
+
+    return arr;
+});
+const asyncSearchHotelAtom = loadable(searchHotelAtom);
+
 const searchQueryAtom = atom(initQuery)
 const searchAtom = atom(async (get) => {
     const q = get(searchQueryAtom);
@@ -145,6 +171,8 @@ function FlightSearch() {
 
     // atoms
     const [, setQuery] = useAtom(searchQueryAtom);
+    const [, setHotelQuery] = useAtom(searchHotelQueryAtom);
+    const [hotelSearchValue] = useAtom(asyncSearchHotelAtom);
 
     // state
     const [from, setFrom] = useState("");
@@ -152,6 +180,9 @@ function FlightSearch() {
     const [numDays, setNumDays] = useState(1);
     const [hotel, setHotel] = useState("");
     const [stop, setStop] = useState(true);
+    const [selectHotel, setSelectHotel] = useState("");
+
+    const [hotelQueryTimer, setHotelQueryTimer] = useState(0);
 
     const onSearchClick = function () {
         const now = new Date();
@@ -165,9 +196,26 @@ function FlightSearch() {
             to,
             start,
             end,
-            hotel,
+            hotel: selectHotel,
             nonStop: stop ? "1" : "0",
         });
+    };
+
+    // effect
+    useEffect(() => {
+        clearTimeout(hotelQueryTimer);
+        const timer = setTimeout(function () {
+            setHotelQuery(hotel);
+        }, 1000);
+        setHotelQueryTimer(+timer);
+    }, [hotel]);
+
+
+    const hotelList = hotelSearchValue && hotelSearchValue.state === "hasData" ? hotelSearchValue.data : [];
+    const renderHotelOptions = () => {
+        return (hotelList ?? []).map(
+            (x, i) => <option key={`hotel-select-${i}`} value={x.id}>{x.name}</option>
+        );
     };
 
     return (
@@ -184,15 +232,23 @@ function FlightSearch() {
                     <input type="text" id="destination" name="destination" placeholder="Airport Code (example, SFO)"
                         className="w-full border rounded-lg px-3 py-2" onChange={(e) => { setTo(e.target.value); }} value={to} />
                 </div>
+                <div className="w-full px-2 mt-4 mb-4 md:mb-0">
+                    <label htmlFor="hotel" className="block text-gray-700 font-bold mb-2">Search Hotel</label>
+                    <input type="text" id="hotel" name="hotel" placeholder="Search for Hotel (example, SFO Hotels)"
+                        className="w-full border rounded-lg px-3 py-2" onChange={(e) => { setHotel(e.target.value); }} value={hotel} />
+                </div>
+                <div className="w-full md:w-1/2 px-2 mt-4 mb-4 md:mb-0">
+                    <label htmlFor="selectHotel" className="block text-gray-700 font-bold mb-2">Select Hotel</label>
+                    <select id="selectHotel" name="selectHotel"
+                        className="w-full border rounded-lg px-3 py-2" onChange={(e) => { setSelectHotel(e.target.value) }} value={selectHotel}
+                        disabled={(!hotelList || hotelList.length === 0)}>
+                        {renderHotelOptions()}
+                    </select>
+                </div>
                 <div className="w-full md:w-1/2 px-2 mt-4 mb-4 md:mb-0">
                     <label htmlFor="numdays" className="block text-gray-700 font-bold mb-2">Length of Stay (nights)</label>
                     <input type="number" id="numdays" name="numdays"
                         className="w-full border rounded-lg px-3 py-2" onChange={(e) => { setNumDays(parseInt(e.target.value)); }} value={numDays} />
-                </div>
-                <div className="w-full md:w-1/2 px-2 mt-4 mb-4 md:mb-0">
-                    <label htmlFor="hotel" className="block text-gray-700 font-bold mb-2">Hotel ID</label>
-                    <input type="text" id="hotel" name="hotel" placeholder="Hotel ID (example, ChoIz4ew9L-dwJfjARoNL2cvMTFma3F4ZGw5MxAB)"
-                        className="w-full border rounded-lg px-3 py-2" onChange={(e) => { setHotel(e.target.value); }} value={hotel} />
                 </div>
                 <div className="w-full md:w-1/2 px-2 mt-4 mb-4 md:mb-0">
                     <div className="flex items-center mt-4 mb-4">

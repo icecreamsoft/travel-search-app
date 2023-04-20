@@ -17,8 +17,29 @@ async function searchHotels(searchQuery: string) {
     const [, , str] = data.split("\n");
     const [arr] = JSON.parse(str ?? "[]");
     const [, , str2] = arr ?? [];
-    const [[dataArr]] = JSON.parse(str2 ?? "[]");
+    const [list, hotel, entity] = JSON.parse(str2 ?? "[]");
+    const [dataArr] = list ?? [];
     const [[, resultArr]] = dataArr ?? [[]];
+
+    console.log({ data });
+
+
+
+    if (!resultArr) {
+        const [urlPath] = entity ?? [];
+        const [, name] = hotel ?? [];
+
+        if (!name || !urlPath) return [];
+        if (!(urlPath as string).startsWith("/travel/hotels/entity/")) return [];
+
+        return [
+            {
+                id: urlPath.split("?")[0].replace("/travel/hotels/entity/", ""),
+                name,
+            }
+        ];
+    }
+
 
     const result = (resultArr as Array<any>).map((x: any) => {
         const [i, obj] = x;
