@@ -65,9 +65,9 @@ async function searchHotels(searchQuery: string) {
 }
 
 /**
- * @param hotel_id - Hotel unique identifier, used by google travel website. This is included in the hotel 
- * @param date_start - 
- * @param date_end - 
+ * @param hotel_id - Hotel unique identifier, used by google travel website. This is returned by the hotel search API 
+ * @param date_start - starting date as number array. Example : [2023, 6, 1]
+ * @param date_end - ending date as number array. Example : [2023, 8, 1]
  */
 async function getHotelPrices(hotel_id: string, date_start: number[], date_end: number[]) {
     const hotelData = [[["yY52ce", `[null,[${JSON.stringify(date_start)},${JSON.stringify(date_end)},1],[2,[],0],\"${hotel_id}\",\"USD\"]`, null, "generic"]]];
