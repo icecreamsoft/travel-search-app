@@ -19,8 +19,6 @@ const searchHotelAtom = atom(async (get) => {
     const hotelSearch = await fetch("/api/v0/hotels/search?" + new URLSearchParams({ q }));
     const { data } = await hotelSearch.json();
 
-    console.log("hotels", data);
-
     const arr = (data as Array<any>).map((x: any) => {
         const { id, name } = x;
 
@@ -45,45 +43,59 @@ const searchAtom = atom(async (get) => {
     const flights = (await flightQuery.json());
     const hotels = (await hotelQuery.json());
 
+    const hotelPrices = (hotels.data as Array<any>).map((x: any) => {
+        const date = x.date as string;
+        const price = x.usd as number;
+
+        return [date, price] as [string, number];
+    });
+
+    const hotelMap = new Map(hotelPrices);
+
     const prices = (flights.data as Array<any>).map((x: any) => {
         const d = {
             startDate: x.startDate as string,
             endDate: x.endDate as string,
             flightPrice: x.usd as number,
-            hotelPrice: -1,
-            totalPrice: -1,
+            hotelPrice: 0,
+            totalPrice: 0,
         };
 
+        const current = new Date(d.startDate);
+        const end = new Date(d.endDate);
+        while (current.getTime() < end.getTime()) {
+            const ds = current.toISOString().split("T")[0];
+            const price = hotelMap.get(ds);
+            if (!price) {
+                d.hotelPrice = 0;
+                break;
+            }
+            d.hotelPrice += price;
+            current.setDate(current.getDate() + 1);
+        }
+
+        d.totalPrice = d.hotelPrice + d.flightPrice;
         return [d.startDate, d] as [string, typeof d];
+    }).filter(([, x]) => {
+        return x.hotelPrice > 0;
     });
 
-    const resultMap = new Map(prices);
     const min = {
         price: -1,
         startDate: "",
         endDate: "",
     };
 
-    (hotels.data as Array<any>).forEach((x: any) => {
-        const date = x.date as string;
-        const find = resultMap.get(date);
-        if (!find || !find.flightPrice) return;
-
-        find.hotelPrice = x.usd as number;
-        if (!find.flightPrice || !find.hotelPrice) return;
-
-        find.totalPrice = (find.flightPrice + find.hotelPrice);
-
-        if (min.price === -1 || min.price > find.totalPrice) {
-            min.price = find.totalPrice;
-            min.startDate = find.startDate;
-            min.endDate = find.endDate;
-        }
+    prices.forEach(([, v]) => {
+        if (min.price > -1 && min.price < v.totalPrice) return;
+        min.price = v.totalPrice;
+        min.startDate = v.startDate;
+        min.endDate = v.endDate;
     });
 
     return {
         min,
-        prices: resultMap
+        prices
     };
 });
 const asyncSearchAtom = loadable(searchAtom);
@@ -144,7 +156,7 @@ function SearchResult() {
                         </th>
                         <th scope="col"
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Hotel Price
+                            Hotel Price (est. total)
                         </th>
                         <th scope="col"
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -237,8 +249,9 @@ function FlightSearch() {
                 <div className="w-full md:w-1/2 px-2 mt-4 mb-4 md:mb-0">
                     <label htmlFor="selectHotel" className="block text-gray-700 font-bold mb-2">Select Hotel</label>
                     <select id="selectHotel" name="selectHotel"
-                        className="w-full border rounded-lg px-3 py-2" onChange={(e) => { setSelectHotel(e.target.value) }} value={selectHotel}
+                        className="w-full border rounded-lg px-3 py-2 disabled:opacity-40" onChange={(e) => { setSelectHotel(e.target.value) }} value={selectHotel}
                         disabled={(!hotelList || hotelList.length === 0)}>
+                        <option value="">-- Please select hotel --</option>
                         {renderHotelOptions()}
                     </select>
                 </div>

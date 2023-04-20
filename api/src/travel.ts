@@ -21,10 +21,6 @@ async function searchHotels(searchQuery: string) {
     const [dataArr] = list ?? [];
     const [[, resultArr]] = dataArr ?? [[]];
 
-    console.log({ data });
-
-
-
     if (!resultArr) {
         const [urlPath] = entity ?? [];
         const [, name] = hotel ?? [];
@@ -95,8 +91,6 @@ async function getHotelPrices(hotel_id: string, date_start: number[], date_end: 
         const dollar = (usd as string).replace(/\$/g, "").replace(/\,/g, "");
         const formattedDate = new Date(date).toISOString().split("T")[0];
 
-        console.log("hotel", { usd, dollar, i: parseInt(dollar) });
-
         return {
             date: formattedDate,
             usd: parseInt(dollar)
@@ -118,17 +112,18 @@ async function getHotelPrices(hotel_id: string, date_start: number[], date_end: 
  * @param date_range - date range for price data
  */
 async function getFlightPrices(from: string, to: string, flight_dates: string[], date_range: string[], isNonStopOnly: boolean) {
+    const dayTrip = new Date(flight_dates[1]).getDate() - new Date(flight_dates[0]).getDate();
     const flightData = [
         null,
         [null, null, 1, null, [], 1, [1, 0, 0, 0], null, null, null, null, null, null, [[[[[from, 0]]], [[[to, 0]]], null, (isNonStopOnly ? 1 : 0), [], [], flight_dates[0], null, [], [], [], null, null, [], 3], [[[[to, 4]]], [[[from, 4]]], null, (isNonStopOnly ? 1 : 0), [], [], flight_dates[1], null, [], [], [], null, null, [], 3]], null, null, null, true, null, null, null, null, null, [], null, null, null],
         date_range,
         null,
         [
-            4,
-            4
+            dayTrip,
+            dayTrip
         ]
     ];
-    console.log({ from, to, flight_dates, date_range });
+    console.log({ flight_dates, dayTrip });
 
     const queryData = encodeURIComponent(JSON.stringify([null, JSON.stringify(flightData)]));
     const { data } = await axios({
